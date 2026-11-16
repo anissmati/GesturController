@@ -1,19 +1,14 @@
 import cv2
 import mediapipe as mp
 import urllib.request
-import time
-import os
+import time, math
+import os, pyautogui
 
 # 1. Download the required model bundle (run once)
 #model_url = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
 #urllib.request.urlretrieve(model_url, "hand_landmarker.task")
 
-#loading the images
-fingers_list = os.listdir("fingers")
-overlay_list = []
-for finger in fingers_list:
-    image = cv2.imread(f"fingers/{finger}")
-    overlay_list.append(image)
+
 
 #set up the tasks
 BaseOptions = mp.tasks.BaseOptions
@@ -35,7 +30,11 @@ options = HandLandmarkerOptions(
 )
 
 landmarker = HandLandmarker.create_from_options(options)
+lock_x = [0,0]
+lock_y = [0,0]
 
+is_pinching = False
+located = False
 def main():
     cap = cv2.VideoCapture(0)
     while cap.isOpened():
@@ -78,6 +77,28 @@ def main():
                         else:
                             if cy < cy2:
                                 sum += 1
+
+                    if (sum == 4):
+                        thumb = hand_landmarks[4]
+                        index = hand_landmarks[8]
+
+                        x4, y4 = int(thumb.x * w), int(thumb.y * h)
+                        x8, y8 = int(index.x * w), int(index.y * h)
+
+                        distance = math.hypot(x8 - x4, y8 - y4)
+
+                        if distance < 30:
+                            if not is_pinching:
+                                is_pinching = True
+                        else:
+                            is_pinching = False
+
+                        if(is_pinching):
+                            if located == False:
+                                pyautogui.moveTo(720, 359)
+                                located = True
+
+                    
 
                     cv2.circle(frame, (cx, cy), 2, (0, 255, 0), cv2.FILLED)
 
