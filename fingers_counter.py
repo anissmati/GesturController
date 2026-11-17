@@ -33,9 +33,14 @@ landmarker = HandLandmarker.create_from_options(options)
 lock_x = [0,0]
 lock_y = [0,0]
 
-is_pinching = False
-located = False
+
 def main():
+
+    pyautogui.PAUSE = 0
+
+    is_pinching = False
+    located = 0
+    axe = 0
     cap = cv2.VideoCapture(0)
     while cap.isOpened():
 
@@ -90,13 +95,30 @@ def main():
                         if distance < 30:
                             if not is_pinching:
                                 is_pinching = True
-                        else:
+                        elif is_pinching:
                             is_pinching = False
+                            located = 0
+                            pyautogui.mouseDown()
+                            pyautogui.mouseUp()
 
                         if(is_pinching):
-                            if located == False:
-                                pyautogui.moveTo(720, 359)
-                                located = True
+                            if located == 0:
+                                try:
+                                    anchor = pyautogui.locateCenterOnScreen("assets/volume.png", confidence=0.8)
+                                    if anchor:
+                                        timeline_x = anchor.x - 80
+                                        timeline_y = anchor.y - 50
+                                        pyautogui.moveTo(timeline_x, timeline_y)
+                                        axe = hand_landmarks[4].x * w
+                                        located = 1
+                                except:
+                                    located = 3
+                                    print("image not found")
+
+                            elif located == 1 and ((hand_landmarks[4].x *w - axe) > 1 or (hand_landmarks[4].x *w - axe) < -1):
+                                pyautogui.moveRel((hand_landmarks[4].x * w - axe) * 6, 0)
+                                axe = hand_landmarks[4].x * w
+
 
                     
 
@@ -113,11 +135,11 @@ def main():
                     )
 
         #frame[0:200, 0:200] = overlay_list[sum]
-        cv2.putText(frame, f"{sum}", (50, 100), cv2.FONT_HERSHEY_PLAIN, 5, (255, 0, 0), 1)
-        cv2.imshow("webCam", frame)
+        #cv2.putText(frame, f"{sum}", (50, 100), cv2.FONT_HERSHEY_PLAIN, 5, (255, 0, 0), 1)
+        #cv2.imshow("webCam", frame)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        #if cv2.waitKey(1) & 0xFF == ord('q'):
+            #break
 
 if __name__ == "__main__":
     main()
