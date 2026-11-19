@@ -106,7 +106,6 @@ def main():
 
                 if not is_pinching:
                     if sum == 4 and distance < 25:
-                        pyautogui.moveTo(0.5*w, 0.5*h)
                         is_pinching = True
 
             # 2. Once pinching, IGNORE `sum` — only release when fingers separate
@@ -130,6 +129,7 @@ def main():
                                 located = 1
                         except Exception:
                             located = 3
+                            pyautogui.moveTo(0.5*w, 0.5*h)
                             print("image not found")
 
                     elif located == 1:
