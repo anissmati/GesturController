@@ -2,7 +2,7 @@ import cv2
 import mediapipe as mp
 import urllib.request
 import time, math
-import os, pyautogui
+import os, pyautogui, keyboard
 
 # 1. Download the required model bundle (run once)
 #model_url = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
@@ -38,6 +38,9 @@ def main():
 
     pyautogui.PAUSE = 0
 
+    trigerd = False
+    frame_count = 0
+
     is_pinching = False
     located = 0
     axe = 0
@@ -63,6 +66,7 @@ def main():
         result = landmarker.detect_for_video(mp_image, timespam_ms)
 
         if result.hand_landmarks:
+            last_seen_time = time.time()
             for hand_landmarks, hand_info in zip(result.hand_landmarks, result.handedness):
                 
                 for tip_id in FINGERTIP_IDS:
@@ -83,42 +87,58 @@ def main():
                             if cy < cy2:
                                 sum += 1
 
-                    if (sum == 4):
-                        thumb = hand_landmarks[4]
-                        index = hand_landmarks[8]
+                if trigerd and (time.time() > (time.time() - frame_count)> 0.5) and (sum == 0):
+                    keyboard.send("play/pause media")
+                    trigerd = False
+                    frame_count = 0
+                    print(sum)
+                               
+                if(sum == 5 and (not trigerd)):
+                    frame_count = time.time()
+                    trigerd = True
+                    print("trigred")
+                    
+                thumb = hand_landmarks[4]
+                index = hand_landmarks[8]
+                x4, y4 = int(thumb.x * w), int(thumb.y * h)
+                x8, y8 = int(index.x * w), int(index.y * h)
+                distance = math.hypot(x8 - x4, y8 - y4)
 
-                        x4, y4 = int(thumb.x * w), int(thumb.y * h)
-                        x8, y8 = int(index.x * w), int(index.y * h)
+                if not is_pinching:
+                    if sum == 4 and distance < 25:
+                        pyautogui.moveTo(0.5*w, 0.5*h)
+                        is_pinching = True
 
-                        distance = math.hypot(x8 - x4, y8 - y4)
+            # 2. Once pinching, IGNORE `sum` — only release when fingers separate
+                else:
+                    if distance > 45:
+                        is_pinching = False
+                        located = 0
+                        pyautogui.mouseUp(button='left')
+                        pyautogui.moveRel(0, -40)
 
-                        if distance < 30:
-                            if not is_pinching:
-                                is_pinching = True
-                        elif is_pinching:
-                            is_pinching = False
-                            located = 0
-                            pyautogui.mouseDown()
-                            pyautogui.mouseUp()
+                if is_pinching:
+                    if located == 0:
+                        try:
+                            anchor = pyautogui.locateCenterOnScreen("assets/volume.png", confidence=0.8)
+                            if anchor:
+                                timeline_x = anchor.x - 80
+                                timeline_y = anchor.y - 50
+                                pyautogui.moveTo(timeline_x, timeline_y)
+                                pyautogui.mouseDown(button='left')
+                                axe = x4
+                                located = 1
+                        except Exception:
+                            located = 3
+                            print("image not found")
 
-                        if(is_pinching):
-                            if located == 0:
-                                try:
-                                    anchor = pyautogui.locateCenterOnScreen("assets/volume.png", confidence=0.8)
-                                    if anchor:
-                                        timeline_x = anchor.x - 80
-                                        timeline_y = anchor.y - 50
-                                        pyautogui.moveTo(timeline_x, timeline_y)
-                                        axe = hand_landmarks[4].x * w
-                                        located = 1
-                                except:
-                                    located = 3
-                                    print("image not found")
+                    elif located == 1:
+                        dx = x4 - axe
+                        if abs(dx) > 3:
+                            pyautogui.moveRel(dx * 5, 0)
+                            axe = x4
 
-                            elif located == 1 and ((hand_landmarks[4].x *w - axe) > 1 or (hand_landmarks[4].x *w - axe) < -1):
-                                pyautogui.moveRel((hand_landmarks[4].x * w - axe) * 6, 0)
-                                axe = hand_landmarks[4].x * w
-
+                
 
                     
 
@@ -133,7 +153,13 @@ def main():
                     (0, 255, 0), 
                     1
                     )
-
+        else:
+            # 4. Grace period: only release if hand disappears for > 0.25 seconds
+            if is_pinching and (time.time() - last_seen_time) > 0.25:
+                is_pinching = False
+                located = 0
+                pyautogui.mouseUp(button='left')
+                pyautogui.moveRel(0, -40)
         #frame[0:200, 0:200] = overlay_list[sum]
         #cv2.putText(frame, f"{sum}", (50, 100), cv2.FONT_HERSHEY_PLAIN, 5, (255, 0, 0), 1)
         #cv2.imshow("webCam", frame)
