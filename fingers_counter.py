@@ -118,19 +118,32 @@ def main():
 
                 if is_pinching:
                     if located == 0:
-                        try:
-                            anchor = pyautogui.locateCenterOnScreen("assets/volume.png", confidence=0.8)
-                            if anchor:
-                                timeline_x = anchor.x - 80
-                                timeline_y = anchor.y - 50
-                                pyautogui.moveTo(timeline_x, timeline_y)
-                                pyautogui.mouseDown(button='left')
-                                axe = x4
-                                located = 1
-                        except Exception:
-                            located = 3
-                            pyautogui.moveTo(0.5*w, 0.5*h)
-                            print("image not found")
+                        images = ["assets/youtube_pointer.png", "assets/stremio_pointer.png"]
+                        image = "nothing"
+                        for img in images:
+                            try:
+                                anchor = pyautogui.locateCenterOnScreen(img, confidence=0.8)
+                                image = img
+
+                            except Exception:
+                                located = 3
+                                pyautogui.moveTo(0.5*w, 0.5*h)
+                                print("image not found")
+
+                        if image == images[0]:
+                            timeline_x = anchor.x + 10
+                            timeline_y = anchor.y
+                            pyautogui.moveTo(timeline_x, timeline_y)
+                            pyautogui.mouseDown(button='left')
+                            axe = x4
+                            located = 1
+                        elif image == images[1]:
+                            timeline_x = anchor.x 
+                            timeline_y = anchor.y
+                            pyautogui.moveTo(timeline_x, timeline_y)
+                            pyautogui.mouseDown(button='left')
+                            axe = x4
+                            located = 1
 
                     elif located == 1:
                         dx = x4 - axe
@@ -160,12 +173,13 @@ def main():
                 located = 0
                 pyautogui.mouseUp(button='left')
                 pyautogui.moveRel(0, -40)
-        #frame[0:200, 0:200] = overlay_list[sum]
-        #cv2.putText(frame, f"{sum}", (50, 100), cv2.FONT_HERSHEY_PLAIN, 5, (255, 0, 0), 1)
-        #cv2.imshow("webCam", frame)
 
-        #if cv2.waitKey(1) & 0xFF == ord('q'):
-            #break
+        
+        cv2.putText(frame, f"{sum}", (50, 100), cv2.FONT_HERSHEY_PLAIN, 5, (255, 0, 0), 1)
+        cv2.imshow("webCam", frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
 if __name__ == "__main__":
     main()
