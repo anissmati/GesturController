@@ -108,7 +108,6 @@ def main():
                     if sum == 4 and distance < 25:
                         is_pinching = True
 
-            # 2. Once pinching, IGNORE `sum` — only release when fingers separate
                 else:
                     if distance > 45:
                         is_pinching = False
@@ -150,10 +149,6 @@ def main():
                         if abs(dx) > 3:
                             pyautogui.moveRel(dx * 5, 0)
                             axe = x4
-
-                
-
-                    
 
                     cv2.circle(frame, (cx, cy), 2, (0, 255, 0), cv2.FILLED)
 

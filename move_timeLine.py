@@ -21,7 +21,7 @@ HandLandmarker = mp.tasks.vision.HandLandmarker
 HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
 VisionRunningMode = mp.tasks.vision.RunningMode
 
-FINGERTIP_IDS1 = [0, 4, 8, 12, 16, 20]
+FINGERTIP_IDS = [0, 4, 8, 12, 16, 20]
 #FINGERTIP_IDS = [0,1, 2, 3, 4, 5, 6, 7, 8,9, 10, 11, 12,13, 14, 15, 16, 17, 18, 19, 20]
 
 # Create the landmarker in VIDEO mode for synchronous webcam processing
@@ -66,7 +66,7 @@ def main():
 
                     cx, cy = int(landmark.x * w), int(landmark.y *h)
 
-                    if(tip_id in FINGERTIP_IDS1 ):
+                    if(tip_id in FINGERTIP_IDS):
                         landmark2 = hand_landmarks[tip_id - 2]
                         cx2, cy2 = int(landmark2.x * w), int(landmark2.y * h)
 
