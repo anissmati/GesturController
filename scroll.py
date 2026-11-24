@@ -1,19 +1,12 @@
 import cv2
 import mediapipe as mp
 import urllib.request
-import time
+import time, keyboard, subprocess
 import os
 
 # 1. Download the required model bundle (run once)
 #model_url = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
 #urllib.request.urlretrieve(model_url, "hand_landmarker.task")
-
-#loading the images
-fingers_list = os.listdir("fingers")
-overlay_list = []
-for finger in fingers_list:
-    image = cv2.imread(f"fingers/{finger}")
-    overlay_list.append(image)
 
 #set up the tasks
 BaseOptions = mp.tasks.BaseOptions
@@ -36,8 +29,13 @@ options = HandLandmarkerOptions(
 
 landmarker = HandLandmarker.create_from_options(options)
 
+def adb(command):
+    subprocess.run(f"adb shell {command}", shell=True)
+
 def main():
     cap = cv2.VideoCapture(0)
+    trigred = False
+    counter = 0
     while cap.isOpened():
 
         ret, frame = cap.read()
@@ -58,6 +56,8 @@ def main():
 
         result = landmarker.detect_for_video(mp_image, timespam_ms)
 
+        raised = [0]
+
         if result.hand_landmarks:
             for hand_landmarks, hand_info in zip(result.hand_landmarks, result.handedness):
                 
@@ -67,6 +67,7 @@ def main():
                     cx, cy = int(landmark.x * w), int(landmark.y *h)
 
                     if(tip_id in FINGERTIP_IDS):
+
                         landmark2 = hand_landmarks[tip_id - 2]
                         cx2, cy2 = int(landmark2.x * w), int(landmark2.y * h)
 
@@ -75,9 +76,11 @@ def main():
                             cx2, cy2 = int(landmark2.x * w), int(landmark2.y * h)
                             if cx < cx2:
                                 sum += 1
+                                raised.append(tip_id)
                         else:
                             if cy < cy2:
                                 sum += 1
+                                raised.append(tip_id)
 
                     cv2.circle(frame, (cx, cy), 2, (0, 255, 0), cv2.FILLED)
 
@@ -90,6 +93,21 @@ def main():
                     (0, 255, 0), 
                     1
                     )
+            
+            if raised == [0, 4] and not trigred:
+                counter = time.time()
+                trigred = True
+                print("trigred")
+            elif trigred and raised == [0, 4, 8, 12, 16, 20]:
+                if((time.time() - counter) < 1):
+                    #keyboard.press("down")
+                    #keyboard.release("down")
+                    adb("input swipe 500 1500 500 500 300")
+                    trigred = False
+                    print("worked")
+                else:
+                    trigred = False
+
 
         #frame[0:200, 0:200] = overlay_list[sum]
         cv2.putText(frame, f"{sum}", (50, 100), cv2.FONT_HERSHEY_PLAIN, 5, (255, 0, 0), 1)
